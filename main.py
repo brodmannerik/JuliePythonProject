@@ -23,11 +23,25 @@ def detect_objects(image_np, detection_model):
     return result
 
 
-# Draw bounding boxes around detected objects
+# Count the number of detected people
+def count_people(detections):
+    num_detections = int(detections.pop('num_detections'))
+    count = 0
+    class_ids = detections['detection_classes'][0]
+    scores = detections['detection_scores'][0]
+    for i in range(num_detections):
+        class_id = int(class_ids[i])
+        score = scores[i]
+        if class_id == 1 and score > 0.5:  # Class ID 1 corresponds to 'person'
+            count += 1
+    return count
+
+
+
 # Draw bounding boxes around detected objects
 def draw_boxes(image_np, detections):
-    num_detections = int(detections.pop('num_detections'))
-    detections = {key: value[0, :num_detections].tolist() for key, value in detections.items()}
+    num_detections = int(detections['num_detections'])
+    detections = {key: np.squeeze(value) for key, value in detections.items()}
 
     for i in range(num_detections):
         class_id = int(detections['detection_classes'][i])
@@ -65,6 +79,12 @@ def main():
 
         # Draw bounding boxes around detected people
         frame_with_boxes = draw_boxes(frame.copy(), detections)
+
+        # Count the number of detected people
+        num_people = count_people(detections)
+
+        # Log the number of detected people in the console
+        print("Number of detected people:", num_people)
 
         # Display the output frame
         cv2.imshow('People Count', frame_with_boxes)
